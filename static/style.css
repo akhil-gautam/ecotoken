@@ -1,0 +1,792 @@
+/* ========================================================
+   DESIGN TOKENS — dark is the default, [data-theme="light"]
+   on <html> flips to the light palette.
+   ========================================================*/
+:root {
+  /* Accents (neon) — dark palette */
+  --accent-green:  #39ff14;
+  --accent-coral:  #ff6b6b;
+  --accent-cyan:   #00ffff;
+  --accent-amber:  #ffb800;
+  --accent-violet: #a78bfa;
+
+  /* Surfaces */
+  --bg-page:      #0a0a0a;
+  --bg-panel:     #0e0e0e;
+  --bg-panel-2:   #121212;
+  --bg-panel-hi:  #141414;
+  --bg-sub:       #0c0c0c;
+  --bg-track:     #1c1c1c;
+  --bg-hover:     #121212;
+
+  /* Borders */
+  --border:        #1b1b1b;
+  --border-strong: #1e1e1e;
+  --border-row:    #161616;
+  --border-xp:     #222;
+
+  /* Text */
+  --text:       #e4e4e7;
+  --text-muted: #8a8a8a;
+  --text-dim:   #555;
+  --text-faint: #666;
+
+  /* Chart */
+  --chart-axis:   #555;
+  --chart-grid:   rgba(255,255,255,0.06);
+  --tooltip-bg:   #111;
+  --tooltip-br:   #333;
+  --tooltip-text: #eee;
+
+  /* Glass primitives */
+  --road-bg-a:   #0a0a0a;
+  --road-bg-b:   #111;
+  --glow-alpha:  0.55;
+  --particle-alpha: 0.35;
+  --noise-alpha: 0.04;
+
+  /* Transition shared */
+  --theme-trans: background-color 0.35s ease, border-color 0.35s ease,
+                 color 0.35s ease, box-shadow 0.35s ease;
+}
+
+[data-theme="light"] {
+  --accent-green:  #16a34a;
+  --accent-coral:  #dc2626;
+  --accent-cyan:   #0891b2;
+  --accent-amber:  #c2760a;
+  --accent-violet: #7c3aed;
+
+  --bg-page:      #f5f5f1;
+  --bg-panel:     #ffffff;
+  --bg-panel-2:   #fafafa;
+  --bg-panel-hi:  #f4f4f2;
+  --bg-sub:       #f8f8f4;
+  --bg-track:     #e7e7e2;
+  --bg-hover:     #f8f8f4;
+
+  --border:        #e2e2dc;
+  --border-strong: #d4d4cd;
+  --border-row:    #ececea;
+  --border-xp:     #dcdcd6;
+
+  --text:       #0f0f0f;
+  --text-muted: #404040;
+  --text-dim:   #71717a;
+  --text-faint: #8a8a85;
+
+  --chart-axis:   #777;
+  --chart-grid:   rgba(0,0,0,0.08);
+  --tooltip-bg:   #ffffff;
+  --tooltip-br:   #d4d4cd;
+  --tooltip-text: #111;
+
+  --road-bg-a:   #f0efe8;
+  --road-bg-b:   #e5e4dc;
+  --glow-alpha:  0.25;
+  --particle-alpha: 0.18;
+  --noise-alpha: 0.03;
+}
+
+/* ========================================================
+   GLOBALS
+   ========================================================*/
+html, body {
+  background: var(--bg-page);
+  color: var(--text);
+  transition: var(--theme-trans);
+}
+
+body {
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+.font-mono, code, canvas + * {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+.noise-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  opacity: var(--noise-alpha); mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+#ambient-particles {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 0; opacity: 0.5;
+}
+
+main, header { position: relative; z-index: 2; }
+
+/* Color helpers used by Tailwind classes in markup */
+.bg-neon-green { background-color: var(--accent-green); }
+
+/* ========================================================
+   TOOLBAR + ICON BUTTONS
+   ========================================================*/
+.toolbar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 40;
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  cursor: pointer;
+  transition: var(--theme-trans), transform 0.2s;
+}
+
+.icon-btn:hover { transform: translateY(-1px); }
+
+.icon-btn svg {
+  width: 22px; height: 22px;
+  overflow: visible;
+}
+
+.theme-icon-path { fill: currentColor; }
+.theme-rays line { stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+
+[data-theme="dark"]  .theme-toggle { color: var(--accent-cyan); box-shadow: 0 0 14px color-mix(in oklab, var(--accent-cyan) 25%, transparent); }
+[data-theme="light"] .theme-toggle { color: var(--accent-amber); }
+
+[data-theme="dark"]  .mute-toggle { color: var(--accent-green); box-shadow: 0 0 12px color-mix(in oklab, var(--accent-green) 20%, transparent); }
+[data-theme="light"] .mute-toggle { color: var(--accent-violet); }
+.mute-toggle.muted { color: var(--text-faint) !important; box-shadow: none !important; }
+
+/* ========================================================
+   LOGO
+   ========================================================*/
+.logo-mark {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  background: var(--accent-green);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow:
+    0 0 24px color-mix(in oklab, var(--accent-green) 60%, transparent),
+    inset 0 0 0 1px rgba(255,255,255,0.2);
+  animation: logo-pulse 3.6s ease-in-out infinite;
+}
+.logo-mark svg { overflow: visible; }
+
+@keyframes logo-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); filter: brightness(1.1); }
+}
+
+/* ========================================================
+   RANK / XP HUD
+   ========================================================*/
+.rank-hud {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, var(--bg-panel-hi) 0%, var(--bg-page) 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  min-width: min(640px, 100%);
+  transition: var(--theme-trans);
+}
+
+.rank-left { display: flex; flex-direction: column; gap: 4px; }
+
+.rank-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 12px 4px 6px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--rank-color, var(--accent-green));
+  color: var(--rank-color, var(--accent-green));
+  background: color-mix(in oklab, var(--rank-color, var(--accent-green)) 10%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--rank-color, var(--accent-green)) 30%, transparent);
+}
+
+.rank-emblem {
+  width: 22px; height: 22px;
+  filter: drop-shadow(0 0 6px var(--rank-color, var(--accent-green)));
+}
+
+.rank-meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--text-faint);
+}
+.rank-meta .rank-sep { color: var(--text-dim); margin: 0 4px; }
+.rank-meta .rank-unit { color: var(--text-dim); margin-left: 6px; }
+
+.xp-track {
+  position: relative;
+  height: 14px;
+  background: var(--bg-panel-hi);
+  border: 1px solid var(--border-xp);
+  border-radius: 999px;
+  overflow: hidden;
+  transition: var(--theme-trans);
+}
+
+.xp-fill {
+  position: absolute; inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--rank-color, var(--accent-green)) 100%, transparent),
+    color-mix(in oklab, var(--rank-color, var(--accent-green)) 60%, white)
+  );
+  box-shadow: 0 0 14px color-mix(in oklab, var(--rank-color, var(--accent-green)) 50%, transparent);
+  border-radius: 999px;
+}
+.xp-fill::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  background-size: 60% 100%;
+  animation: xp-shine 2.2s linear infinite;
+}
+@keyframes xp-shine {
+  0%   { background-position: -60% 0; }
+  100% { background-position: 160% 0; }
+}
+.xp-ticks {
+  position: absolute; inset: 0;
+  display: flex; justify-content: space-between;
+  padding: 0 20%; pointer-events: none;
+}
+.xp-ticks span { width: 1px; height: 100%; background: rgba(127,127,127,0.15); }
+
+.rank-right { display: flex; gap: 12px; }
+
+.mini-stat {
+  text-align: right;
+  padding: 6px 12px;
+  border-left: 1px solid var(--border-strong);
+  min-width: 72px;
+}
+.mini-stat-num {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800; font-size: 20px;
+  color: var(--text); line-height: 1;
+}
+.mini-stat-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: 0.14em;
+}
+
+.period-strip {
+  margin-top: 14px;
+  text-align: center;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+
+/* ========================================================
+   STAT CARDS
+   ========================================================*/
+.stat-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-panel-hi) 0%, var(--bg-sub) 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 18px 18px 10px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: var(--theme-trans),
+              transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.stat-card[data-accent="green"] { --accent: var(--accent-green); }
+.stat-card[data-accent="coral"] { --accent: var(--accent-coral); }
+.stat-card[data-accent="cyan"]  { --accent: var(--accent-cyan); }
+.stat-card[data-accent="amber"] { --accent: var(--accent-amber); }
+
+.stat-card::before {
+  content: "";
+  position: absolute; inset: -1px;
+  border-radius: 14px;
+  padding: 1px;
+  background: linear-gradient(120deg, transparent 40%, var(--accent, var(--accent-green)) 60%, transparent 80%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.stat-card:hover::before { opacity: 0.9; }
+
+.stat-icon {
+  font-size: 22px;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 12px var(--accent));
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.stat-value {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800; font-size: clamp(36px, 5vw, 56px); line-height: 1;
+  margin-top: 4px;
+  color: var(--accent);
+  text-shadow: 0 0 24px color-mix(in oklab, var(--accent) calc(var(--glow-alpha) * 60%), transparent);
+  letter-spacing: -0.02em;
+}
+
+.stat-unit { color: var(--text-faint); font-family: "JetBrains Mono", monospace; font-size: 12px; margin-top: 2px; }
+.stat-equiv { color: var(--text-muted); font-size: 13px; margin-top: 10px; min-height: 2.4em; }
+.stat-spark { display: block; margin-top: 6px; width: 100%; height: 36px; }
+
+/* Bento feature card (Tokens in hero — col-span-2 row-span-2) */
+.stat-card-feature {
+  padding: 26px 26px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.stat-card-feature .stat-icon    { font-size: 28px; margin-bottom: 10px; }
+.stat-card-feature .stat-label   { font-size: 13px; }
+.stat-card-feature .stat-unit    { font-size: 14px; }
+.stat-card-feature .stat-equiv   { font-size: 14px; margin-top: 16px; }
+.stat-card-feature .stat-spark-tall { height: 80px !important; margin-top: auto; }
+.stat-value-xl {
+  font-size: clamp(56px, 7vw, 96px) !important;
+  margin-top: 12px !important;
+  line-height: 0.95 !important;
+}
+
+/* ========================================================
+   PANELS
+   ========================================================*/
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  transition: var(--theme-trans);
+}
+
+.reveal { opacity: 0; transform: translateY(28px); }
+
+/* ========================================================
+   TOGGLE BUTTONS
+   ========================================================*/
+.toggle-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-faint);
+  background: transparent;
+  transition: all 0.2s;
+}
+.toggle-btn.active {
+  color: var(--bg-page);
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--accent-green) 50%, transparent);
+}
+
+/* ========================================================
+   VS BADGE
+   ========================================================*/
+.vs-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent-coral), var(--accent-amber));
+  color: #0a0a0a;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800; font-size: 12px; letter-spacing: 0.1em;
+  transform: skewX(-10deg);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--accent-coral) 40%, transparent);
+}
+
+/* ========================================================
+   VIZ CARDS
+   ========================================================*/
+.viz-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-panel-2), var(--bg-sub));
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 18px;
+  overflow: hidden;
+  min-height: 260px;
+  transition: var(--theme-trans),
+              transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.viz-card[data-accent="green"] { --accent: var(--accent-green); }
+.viz-card[data-accent="coral"] { --accent: var(--accent-coral); }
+.viz-card[data-accent="cyan"]  { --accent: var(--accent-cyan); }
+.viz-card[data-accent="amber"] { --accent: var(--accent-amber); }
+
+.viz-header {
+  display: flex; align-items: center; gap: 10px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.14em;
+  margin-bottom: 12px;
+}
+.viz-emoji { font-size: 22px; filter: drop-shadow(0 0 10px var(--accent)); }
+.viz-hint { color: var(--text-dim); font-size: 10px; }
+
+.viz-stat {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800; font-size: clamp(26px, 3vw, 36px);
+  color: var(--accent);
+  text-shadow: 0 0 20px color-mix(in oklab, var(--accent) calc(var(--glow-alpha) * 60%), transparent);
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+}
+.viz-text { color: var(--text); font-size: 13px; }
+.viz-sub { color: var(--text-faint); font-family: "JetBrains Mono", monospace; font-size: 11px; margin-top: 6px; }
+
+/* ========================================================
+   GLASSES STAGE + DROPS
+   ========================================================*/
+.glasses-stage { position: relative; min-height: 110px; margin-bottom: 6px; }
+
+.drops-overlay {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.drops-overlay .drop-path { stroke: none; fill: none; }
+.drops-overlay .drop {
+  fill: var(--accent-cyan);
+  opacity: 0;
+  filter: drop-shadow(0 0 4px var(--accent-cyan));
+}
+
+.glasses-row {
+  display: flex; gap: 6px; align-items: flex-end;
+  min-height: 90px; margin-bottom: 4px;
+}
+
+.glass {
+  position: relative;
+  flex: 1; height: 90px;
+  border: 1.5px solid var(--accent-cyan);
+  border-top: none;
+  border-radius: 2px 2px 8px 8px;
+  overflow: hidden;
+  box-shadow: 0 0 14px color-mix(in oklab, var(--accent-cyan) 20%, transparent);
+}
+.glass::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: color-mix(in oklab, var(--accent-cyan) 80%, white);
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+.glass-fill {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 0%;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent-cyan) 40%, transparent),
+    color-mix(in oklab, var(--accent-cyan) 90%, transparent)
+  );
+}
+.glass-fill::after {
+  content: "";
+  position: absolute; top: -4px; left: -10%; right: -10%; height: 6px;
+  background: color-mix(in oklab, var(--accent-cyan) 70%, white);
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: ripple 2.2s ease-in-out infinite;
+}
+@keyframes ripple {
+  0%, 100% { transform: translateY(0) scaleX(1); }
+  50%      { transform: translateY(-1px) scaleX(1.05); }
+}
+.glass-overflow {
+  display: flex; align-items: center; justify-content: center;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px; font-weight: 800;
+  color: var(--accent-cyan);
+  padding: 0 10px;
+}
+
+/* ========================================================
+   ROAD + CAR
+   ========================================================*/
+.road-stage {
+  position: relative;
+  height: 120px;
+  background: linear-gradient(180deg, var(--road-bg-a) 60%, var(--road-bg-b) 100%);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-row);
+  transition: var(--theme-trans);
+}
+.road-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.road-shadow { filter: drop-shadow(0 2px 8px rgba(255,215,0,0.2)); }
+
+.car-rider {
+  position: absolute; top: 0; left: 0;
+  width: 80px; height: 40px;
+  margin-left: -40px; margin-top: -20px;
+  filter: drop-shadow(0 4px 12px color-mix(in oklab, var(--accent-coral) 45%, transparent));
+  will-change: transform;
+}
+.car-rider svg { width: 100%; height: 100%; }
+
+/* ========================================================
+   BATTERY ROW
+   ========================================================*/
+.battery-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 4px; min-height: 70px;
+  align-items: center;
+}
+.battery {
+  position: relative;
+  width: 46px; height: 22px;
+  border: 1.5px solid var(--accent-amber);
+  border-radius: 3px; overflow: hidden;
+  box-shadow: 0 0 10px color-mix(in oklab, var(--accent-amber) 25%, transparent);
+}
+.battery::after {
+  content: "";
+  position: absolute; right: -4px; top: 6px;
+  width: 3px; height: 10px;
+  background: var(--accent-amber);
+  border-radius: 0 2px 2px 0;
+}
+.battery-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--accent-amber) 100%, transparent),
+    color-mix(in oklab, var(--accent-amber) 60%, white)
+  );
+}
+.battery-overflow {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800; font-size: 12px;
+  color: var(--accent-amber); padding: 0 6px;
+}
+
+/* ========================================================
+   FOREST
+   ========================================================*/
+.forest {
+  display: flex; align-items: flex-end; gap: 2px;
+  min-height: 140px; padding: 10px 0 6px;
+  border-bottom: 1px solid var(--border-strong);
+  overflow: hidden;
+}
+.tree-wrap {
+  display: inline-block;
+  transform-origin: bottom center;
+  transform: scale(0);
+}
+.tree-svg { width: 34px; height: 54px; overflow: visible; }
+.tree-crown { stroke-linejoin: round; }
+
+.forest-overflow {
+  display: inline-flex; align-items: flex-end;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800; font-size: 14px;
+  color: var(--accent-green);
+  padding: 0 8px 8px;
+  text-shadow: 0 0 12px color-mix(in oklab, var(--accent-green) 40%, transparent);
+}
+
+/* ========================================================
+   LEADERBOARD
+   ========================================================*/
+#leaderboard tbody tr {
+  border-bottom: 1px solid var(--border-row);
+  transition: background 0.15s;
+}
+#leaderboard tbody tr:hover { background: var(--bg-hover); }
+#leaderboard td {
+  padding: 10px 16px 10px 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+#leaderboard thead tr { border-bottom-color: var(--border-strong) !important; }
+#leaderboard thead th { color: var(--text-dim) !important; }
+
+.medal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 12px; font-weight: 800;
+}
+.medal-1 { background: #ffd700; color: #3a2a00; box-shadow: 0 0 12px #ffd700aa; }
+.medal-2 { background: #c0c0c0; color: #222;   box-shadow: 0 0 10px #ffffff55; }
+.medal-3 { background: #cd7f32; color: #2a1500; box-shadow: 0 0 10px #cd7f3288; }
+
+.score-bar {
+  position: relative;
+  width: 140px; height: 8px;
+  background: var(--bg-track);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.score-bar > span {
+  position: absolute; inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--accent-coral), var(--accent-amber), var(--accent-green));
+  border-radius: 999px; width: 0%;
+}
+
+/* ========================================================
+   TOASTS
+   ========================================================*/
+#toast-stack {
+  position: fixed; top: 16px; right: 16px;
+  z-index: 50;
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px 14px 14px;
+  background: linear-gradient(180deg, var(--bg-panel-hi), var(--bg-panel));
+  border: 1px solid var(--accent, var(--accent-green));
+  border-radius: 12px;
+  box-shadow:
+    0 0 22px color-mix(in oklab, var(--accent, var(--accent-green)) 40%, transparent),
+    0 12px 28px rgba(0, 0, 0, 0.25);
+  min-width: 280px; max-width: 360px;
+  transform: translateX(420px); opacity: 0;
+}
+.toast-icon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in oklab, var(--accent, var(--accent-green)) 15%, transparent);
+  font-size: 22px;
+}
+.toast-body { flex: 1; }
+.toast-kicker {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; color: var(--accent, var(--accent-green));
+  text-transform: uppercase; letter-spacing: 0.18em;
+}
+.toast-title {
+  font-family: "Outfit", sans-serif;
+  font-size: 16px; font-weight: 800; color: var(--text); margin-top: 2px;
+}
+.toast-sub {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--text-faint); margin-top: 2px;
+}
+
+/* ========================================================
+   ERROR BANNER
+   ========================================================*/
+.banner-error {
+  background: color-mix(in oklab, var(--accent-coral) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent-coral) 50%, transparent);
+  color: var(--accent-coral);
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+.banner-error code {
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+  border: 1px solid var(--border-strong);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+/* ========================================================
+   BENTO CARD ANIMATED GRADIENT BACKGROUNDS
+   Accent-tinted radial wash that slowly drifts. More visible
+   on light theme (cards are otherwise flat white).
+   ========================================================*/
+.stat-card,
+.viz-card { isolation: isolate; }
+
+.stat-card::after,
+.viz-card::after {
+  content: "";
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 32% 38% at 22% 24%, color-mix(in oklab, var(--accent, var(--accent-green)) 30%, transparent), transparent 62%),
+    radial-gradient(ellipse 36% 32% at 78% 76%, color-mix(in oklab, var(--accent, var(--accent-green)) 22%, transparent), transparent 62%),
+    radial-gradient(ellipse 28% 32% at 55% 48%, color-mix(in oklab, var(--accent-violet) 14%, transparent), transparent 68%);
+  opacity: 0.22;
+  animation: card-gradient-drift 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.viz-card::after { opacity: 0.16; }
+
+[data-theme="light"] .stat-card::after { opacity: 0.62; }
+[data-theme="light"] .viz-card::after  { opacity: 0.48; }
+
+/* Stagger the drift so the bento row breathes asymmetrically */
+.stat-card[data-accent="green"]::after, .viz-card[data-accent="green"]::after { animation-delay: 0s; }
+.stat-card[data-accent="amber"]::after, .viz-card[data-accent="amber"]::after { animation-delay: -5s; }
+.stat-card[data-accent="cyan"]::after,  .viz-card[data-accent="cyan"]::after  { animation-delay: -10s; }
+.stat-card[data-accent="coral"]::after, .viz-card[data-accent="coral"]::after { animation-delay: -15s; }
+
+@keyframes card-gradient-drift {
+  0%   { transform: translate(-2%, -1%) rotate(-3deg) scale(1.02); }
+  50%  { transform: translate( 2%,  1%) rotate( 3deg) scale(1.00); }
+  100% { transform: translate(-1%,  2%) rotate(-2deg) scale(1.03); }
+}
+
+/* ========================================================
+   LIGHT MODE — tame neon glows that overwhelm on white
+   ========================================================*/
+[data-theme="light"] .stat-icon,
+[data-theme="light"] .viz-emoji {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.08));
+}
+[data-theme="light"] .rank-emblem  { filter: none; }
+[data-theme="light"] .logo-mark    { box-shadow: 0 2px 10px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.08); }
+[data-theme="light"] .car-rider    { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15)); }
+[data-theme="light"] .forest-overflow { text-shadow: none; }
+[data-theme="light"] .glass        { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+[data-theme="light"] .battery      { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+[data-theme="light"] .vs-badge     { box-shadow: 0 2px 10px color-mix(in oklab, var(--accent-coral) 18%, transparent); }
+[data-theme="light"] .xp-fill      { box-shadow: 0 0 8px color-mix(in oklab, var(--rank-color, var(--accent-green)) 30%, transparent); }
+[data-theme="light"] .rank-chip    { box-shadow: 0 2px 10px color-mix(in oklab, var(--rank-color, var(--accent-green)) 18%, transparent); }
+[data-theme="light"] .toast        { box-shadow:
+  0 4px 14px color-mix(in oklab, var(--accent, var(--accent-green)) 18%, transparent),
+  0 12px 28px rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .toggle-btn.active { box-shadow: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

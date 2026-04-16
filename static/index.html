@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ecotoken — your AI coding footprint</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@300;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/style.css" />
+
+    <!-- Hidden morph target paths (anime.svg.morphTo reads these) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <!-- Rank emblems (all draw within a 48×48 box) -->
+        <path id="rank-shape-0" d="M24 8 C12 8 10 22 16 30 C20 36 24 40 24 40 C24 40 28 36 32 30 C38 22 36 8 24 8 Z"/>
+        <path id="rank-shape-1" d="M24 6 C18 10 14 18 16 26 C18 34 24 40 24 40 C24 40 30 34 32 26 C34 18 30 10 24 6 Z"/>
+        <path id="rank-shape-2" d="M24 4 L34 20 L28 20 L36 34 L12 34 L20 20 L14 20 Z M22 34 L26 34 L26 42 L22 42 Z"/>
+        <path id="rank-shape-3" d="M24 6 C20 14 12 18 16 28 C18 34 22 38 24 42 C26 38 30 34 32 28 C36 18 28 14 24 6 Z"/>
+        <path id="rank-shape-4" d="M24 6 L28 20 L42 20 L30 28 L34 42 L24 34 L14 42 L18 28 L6 20 L20 20 Z"/>
+        <path id="rank-shape-5" d="M8 32 L12 14 L20 24 L24 10 L28 24 L36 14 L40 32 L40 40 L8 40 Z"/>
+
+        <!-- Hidden car motion path template, cloned per instance -->
+        <path id="car-motion-tpl" d="M10 60 Q 200 10 400 60 T 790 60"/>
+      </defs>
+    </svg>
+  </head>
+  <body class="font-sans min-h-screen">
+    <div class="noise-overlay" aria-hidden="true"></div>
+    <canvas id="ambient-particles" aria-hidden="true"></canvas>
+
+    <!-- TOOLBAR: theme + mute -->
+    <div class="toolbar">
+      <button id="theme-toggle" class="icon-btn theme-toggle" aria-label="toggle theme" title="toggle theme">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <g class="theme-rays" id="theme-rays">
+            <line x1="12" y1="1"   x2="12" y2="3"/>
+            <line x1="12" y1="21"  x2="12" y2="23"/>
+            <line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/>
+            <line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/>
+            <line x1="1" y1="12"  x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/>
+            <line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/>
+          </g>
+          <path id="theme-icon-path" class="theme-icon-path"
+                d="M4 12 A 8 8 0 1 1 20 12 A 8 8 0 1 1 4 12 Z"/>
+        </svg>
+      </button>
+      <button id="mute-toggle" class="icon-btn mute-toggle" aria-label="toggle sound" title="sound">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9 L4 15 L8 15 L13 19 L13 5 L8 9 Z" fill="currentColor"/>
+          <g id="mute-waves">
+            <path d="M16 9 Q 18 12 16 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M18.5 7 Q 22 12 18.5 17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </g>
+          <g id="mute-x" style="display:none">
+            <line x1="17" y1="9"  x2="22" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="22" y1="9"  x2="17" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Hidden morph targets for theme icon -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <path id="theme-target-sun"  d="M4 12 A 8 8 0 1 1 20 12 A 8 8 0 1 1 4 12 Z"/>
+        <path id="theme-target-moon" d="M20 14 A 8 8 0 1 1 10 4  A 6 6 0 1 0 20 14 Z"/>
+      </defs>
+    </svg>
+
+    <!-- ACHIEVEMENT TOASTS -->
+    <div id="toast-stack" aria-live="polite"></div>
+
+    <!-- SCOREBOARD HEADER -->
+    <header class="max-w-7xl mx-auto px-6 pt-10 pb-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <!-- Drawable brand monogram -->
+          <div class="logo-mark">
+            <svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
+              <path
+                class="logo-path"
+                d="M30 14 C30 8 22 6 16 10 C9 15 9 29 16 34 C22 38 30 36 30 30
+                   M12 22 L28 22"
+                fill="none"
+                stroke="#050505"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 class="font-display text-3xl tracking-tight font-black">ecotoken</h1>
+            <p class="text-xs text-zinc-500 font-mono">the environmental receipt for your AI coding</p>
+          </div>
+        </div>
+
+        <!-- Rank + XP HUD -->
+        <div class="rank-hud">
+          <div class="rank-left">
+            <div class="rank-chip" id="rank-chip">
+              <svg class="rank-emblem" viewBox="0 0 48 48" aria-hidden="true">
+                <path id="rank-emblem-path"
+                      d="M24 8 C12 8 10 22 16 30 C20 36 24 40 24 40 C24 40 28 36 32 30 C38 22 36 8 24 8 Z"
+                      fill="currentColor"/>
+              </svg>
+              <span class="rank-name" id="rank-name">—</span>
+            </div>
+            <div class="rank-meta">
+              <span id="rank-current">0</span>
+              <span class="rank-sep">/</span>
+              <span id="rank-next">—</span>
+              <span class="rank-unit">XP to next rank</span>
+            </div>
+          </div>
+          <div class="xp-track">
+            <div class="xp-fill" id="xp-fill"></div>
+            <div class="xp-ticks" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="rank-right">
+            <div class="mini-stat" title="achievements unlocked">
+              <span class="mini-stat-num" id="ach-count">0</span>
+              <span class="mini-stat-label">achievements</span>
+            </div>
+            <div class="mini-stat" title="active day streak">
+              <span class="mini-stat-num" id="streak-count">0</span>
+              <span class="mini-stat-label">day streak</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="period-strip" id="period-label">—</div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pb-24 space-y-10">
+      <!-- HERO BENTO: Tokens 2×2 feature, Energy + Water 1×1, CO₂ wide 2×1 -->
+      <section class="grid grid-cols-1 md:grid-cols-4 gap-4" id="hero-grid">
+        <!-- FEATURE: Tokens (2 cols × 2 rows) -->
+        <div class="stat-card stat-card-feature reveal md:col-span-2 md:row-span-2" data-accent="green">
+          <div class="stat-icon">📊</div>
+          <div class="stat-label">tokens processed</div>
+          <div class="stat-value stat-value-xl" id="hero-tokens">0</div>
+          <div class="stat-unit">total</div>
+          <div class="stat-equiv" id="hero-tokens-equiv">—</div>
+          <canvas class="stat-spark stat-spark-tall" id="spark-tokens" height="80"></canvas>
+        </div>
+        <!-- Energy -->
+        <div class="stat-card reveal" data-accent="amber">
+          <div class="stat-icon">🔋</div>
+          <div class="stat-label">energy used</div>
+          <div class="stat-value" id="hero-energy">0</div>
+          <div class="stat-unit">Wh</div>
+          <div class="stat-equiv" id="hero-energy-equiv">—</div>
+          <canvas class="stat-spark" id="spark-energy" height="36"></canvas>
+        </div>
+        <!-- Water -->
+        <div class="stat-card reveal" data-accent="cyan">
+          <div class="stat-icon">💧</div>
+          <div class="stat-label">water</div>
+          <div class="stat-value" id="hero-water">0</div>
+          <div class="stat-unit">mL</div>
+          <div class="stat-equiv" id="hero-water-equiv">—</div>
+          <canvas class="stat-spark" id="spark-water" height="36"></canvas>
+        </div>
+        <!-- CO₂ (wide) -->
+        <div class="stat-card reveal md:col-span-2" data-accent="coral">
+          <div class="stat-icon">🏭</div>
+          <div class="stat-label">CO₂ emitted</div>
+          <div class="stat-value" id="hero-co2">0</div>
+          <div class="stat-unit">g</div>
+          <div class="stat-equiv" id="hero-co2-equiv">—</div>
+          <canvas class="stat-spark" id="spark-co2" height="36"></canvas>
+        </div>
+      </section>
+
+      <!-- TIMELINE -->
+      <section class="panel reveal">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <h2 class="font-display text-xl font-bold">daily footprint</h2>
+            <p class="text-xs text-zinc-500 font-mono">energy · water · CO₂ over time</p>
+          </div>
+          <div class="flex gap-2 text-xs font-mono">
+            <button class="toggle-btn active" data-metric="energy_wh">energy</button>
+            <button class="toggle-btn active" data-metric="water_ml">water</button>
+            <button class="toggle-btn active" data-metric="co2_g">CO₂</button>
+          </div>
+        </div>
+        <div class="relative h-72">
+          <canvas id="chart-timeline"></canvas>
+        </div>
+      </section>
+
+      <!-- MODEL + PROVIDER -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="panel reveal">
+          <h2 class="font-display text-xl font-bold mb-1">model breakdown</h2>
+          <p class="text-xs text-zinc-500 font-mono mb-4">energy drawn per model</p>
+          <div class="relative h-72">
+            <canvas id="chart-models"></canvas>
+          </div>
+        </div>
+        <div class="panel reveal">
+          <div class="flex items-center gap-3 mb-4">
+            <h2 class="font-display text-xl font-bold">provider</h2>
+            <div class="vs-badge">VS</div>
+            <h2 class="font-display text-xl font-bold">provider</h2>
+          </div>
+          <p class="text-xs text-zinc-500 font-mono mb-4 -mt-2">same tokens, different infrastructure</p>
+          <div class="relative h-72">
+            <canvas id="chart-providers"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- IMPACT VISUALIZED -->
+      <section class="panel reveal relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none bg-gradient-to-br from-neon-green/5 via-transparent to-electric-coral/5"></div>
+        <div class="relative">
+          <h2 class="font-display text-2xl font-black">your impact, visualized</h2>
+          <p class="text-xs text-zinc-500 font-mono mb-8">
+            abstract numbers rendered as something you can actually picture
+          </p>
+
+          <!-- VIZ BENTO: 6-col asymmetric (Water 2 + Car 4 / Battery 2 + Forest 4) -->
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <!-- WATER -->
+            <div class="viz-card md:col-span-2" data-accent="cyan">
+              <div class="viz-header">
+                <span class="viz-emoji">💧</span>
+                <span class="viz-title">water drunk</span>
+              </div>
+              <div class="glasses-stage">
+                <div class="glasses-row" id="glasses-row"></div>
+                <!-- Motion-path overlay for falling drops -->
+                <svg class="drops-overlay" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+                  <path class="drop-path" id="drop-path-0" d="M 60 -10 C 90 30, 40 60, 60 120" />
+                  <path class="drop-path" id="drop-path-1" d="M 160 -10 C 140 40, 180 70, 160 120" />
+                  <path class="drop-path" id="drop-path-2" d="M 260 -10 C 290 35, 240 75, 260 120" />
+                  <path class="drop-path" id="drop-path-3" d="M 340 -10 C 320 45, 360 80, 340 120" />
+                  <circle class="drop" r="3" data-path="#drop-path-0"></circle>
+                  <circle class="drop" r="2.6" data-path="#drop-path-1"></circle>
+                  <circle class="drop" r="3.4" data-path="#drop-path-2"></circle>
+                  <circle class="drop" r="2.8" data-path="#drop-path-3"></circle>
+                </svg>
+              </div>
+              <div class="viz-stat"><span id="eq-glasses">0</span></div>
+              <div class="viz-text">glasses of drinking water</div>
+              <div class="viz-sub">
+                <span id="eq-showers">0</span> showers · <span id="eq-flushes">0</span> flushes
+              </div>
+            </div>
+
+            <!-- CAR on motion path (wide) -->
+            <div class="viz-card md:col-span-4" data-accent="coral">
+              <div class="viz-header">
+                <span class="viz-emoji">🚗</span>
+                <span class="viz-title">road trip</span>
+              </div>
+              <div class="road-stage">
+                <svg class="road-svg" viewBox="0 0 800 120" preserveAspectRatio="none" aria-hidden="true">
+                  <!-- Dashed road outline drawn in on first load -->
+                  <path
+                    class="road-shadow"
+                    d="M 20 80 Q 200 20 400 80 T 780 80"
+                    fill="none"
+                    stroke="rgba(255,215,0,0.5)"
+                    stroke-width="2"
+                    stroke-dasharray="14 12"
+                  />
+                  <!-- Hidden motion guide (cloned structure) -->
+                  <path
+                    class="road-path"
+                    id="road-motion-path"
+                    d="M 20 80 Q 200 20 400 80 T 780 80"
+                    fill="none"
+                    stroke="none"
+                  />
+                </svg>
+                <div class="car-rider" id="car-rider">
+                  <svg class="car-svg" viewBox="0 0 80 40">
+                    <path d="M6 28 L14 18 L52 18 L62 28 Z" fill="#ff6b6b"/>
+                    <rect x="20" y="20" width="12" height="6" fill="#0a0a0a"/>
+                    <rect x="36" y="20" width="12" height="6" fill="#0a0a0a"/>
+                    <circle cx="20" cy="30" r="4" fill="#222" stroke="#555" stroke-width="1"/>
+                    <circle cx="50" cy="30" r="4" fill="#222" stroke="#555" stroke-width="1"/>
+                    <rect x="60" y="22" width="4" height="2" fill="#ffd700"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="viz-stat"><span id="eq-carkm">0</span> km</div>
+              <div class="viz-text">driven in a gasoline car</div>
+              <div class="viz-sub">
+                <span id="eq-netflix">0</span> hrs Netflix · <span id="eq-searches">0</span> searches
+              </div>
+            </div>
+
+            <!-- BATTERY (narrow) -->
+            <div class="viz-card md:col-span-2" data-accent="amber">
+              <div class="viz-header">
+                <span class="viz-emoji">🔋</span>
+                <span class="viz-title">phone charges</span>
+              </div>
+              <div class="battery-row" id="battery-row"></div>
+              <div class="viz-stat"><span id="eq-phones">0</span></div>
+              <div class="viz-text">smartphone charges</div>
+              <div class="viz-sub"><span id="eq-leds">0</span> hrs of an LED bulb</div>
+            </div>
+
+            <!-- FOREST (4 cols, next to battery) -->
+            <div class="viz-card viz-wide md:col-span-4" data-accent="green">
+              <div class="viz-header">
+                <span class="viz-emoji">🌳</span>
+                <span class="viz-title">offset forest</span>
+                <span class="viz-hint">trees needed for a full day of sequestration</span>
+              </div>
+              <div class="forest" id="forest"></div>
+              <div class="flex items-end justify-between mt-2">
+                <div>
+                  <div class="viz-stat"><span id="eq-trees">0</span> tree-days</div>
+                  <div class="viz-text">to offset this session's CO₂</div>
+                </div>
+                <div class="viz-sub text-right max-w-xs">
+                  Based on ~22 kg CO₂ absorbed per mature tree per year. Doesn't count the
+                  water they also need.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADERBOARD -->
+      <section class="panel reveal">
+        <h2 class="font-display text-xl font-bold mb-1">eco-efficiency leaderboard</h2>
+        <p class="text-xs text-zinc-500 font-mono mb-4">intelligence per watt — higher is better</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" id="leaderboard">
+            <thead class="text-left text-xs text-zinc-500 uppercase font-mono border-b border-zinc-800">
+              <tr>
+                <th class="py-3 pr-4">#</th>
+                <th class="py-3 pr-4">model</th>
+                <th class="py-3 pr-4">provider</th>
+                <th class="py-3 pr-4 text-right">tokens</th>
+                <th class="py-3 pr-4 text-right">energy Wh</th>
+                <th class="py-3 pr-4 text-right">CO₂ g</th>
+                <th class="py-3 pr-4">score</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="text-center text-xs text-zinc-600 font-mono pt-8 border-t border-zinc-900 space-y-1">
+        <p>
+          Environmental estimates based on Jegham et al. (2025) — "How Hungry is AI?" (arXiv:2505.09598v5)
+          and provider-reported infrastructure data.
+        </p>
+        <p>
+          Actual impact varies by datacenter location, time of day, and cooling method. No AI company
+          publishes per-token environmental figures.
+        </p>
+        <p class="pt-2">ecotoken · dashboard auto-refreshes every 60s</p>
+      </footer>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
