@@ -90,7 +90,7 @@ let currentRankKey = null;
 let carAnim = null;
 
 // ---- API base probing ------------------------------------------------
-const FALLBACK_BASE = "http://localhost:3777";
+const FALLBACK_BASE = "http://localhost:51824";
 let apiBase = "";
 let probed = false;
 

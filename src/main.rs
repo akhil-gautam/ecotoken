@@ -44,8 +44,9 @@ struct Cli {
     #[arg(long)]
     project: Option<String>,
 
-    /// HTTP port
-    #[arg(long, default_value_t = 3777)]
+    /// HTTP port (picked from the IANA dynamic range to avoid collisions
+    /// with common dev-server defaults like 3000/5173/8080).
+    #[arg(long, default_value_t = 51824)]
     port: u16,
 
     /// Emit JSON summary to stdout and exit (no server)
@@ -60,7 +61,9 @@ struct Cli {
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| "ecotoken=info".into()))
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| "ecotoken=info".into()),
+        )
         .compact()
         .init();
 
