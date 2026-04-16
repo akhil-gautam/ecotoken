@@ -643,7 +643,7 @@ function fireAchievement(m, accent) {
     .add(el, { translateX: 480, opacity: 0, duration: DUR.toastOut, ease: "inCubic" });
 }
 
-function checkMilestones(summary, equiv) {
+function checkMilestones(summary, equiv, withSound = false) {
   const seen = seenAchievements();
   const fresh = [];
   for (const m of MILESTONES) {
@@ -655,7 +655,10 @@ function checkMilestones(summary, equiv) {
   }
   saveSeen(seen);
   const rank = currentRank(summary.total_tokens || 0);
-  fresh.forEach((m, i) => setTimeout(() => { fireAchievement(m, rank.cur.color); playFanfare(); }, i * 900));
+  fresh.forEach((m, i) => setTimeout(() => {
+    fireAchievement(m, rank.cur.color);
+    if (withSound) playFanfare();
+  }, i * 900));
   document.getElementById("ach-count").textContent = seen.size;
 }
 
@@ -767,7 +770,9 @@ function hideBanner() {
 }
 
 // ---- main refresh loop ---------------------------------------------
-async function refresh() {
+// withSound:true is only passed by the 60s interval tick. UI-driven
+// re-renders (filter toggle, theme switch, boot) stay silent.
+async function refresh({ withSound = false } = {}) {
   await probeBase();
   if (apiBase === null) {
     showBanner(
@@ -795,8 +800,8 @@ async function refresh() {
     renderEquivalents(equiv);
     renderLeaderboard(models);
     document.getElementById("streak-count").textContent = computeStreak(daily);
-    checkMilestones(summary, equiv);
-    playRefreshChord();
+    checkMilestones(summary, equiv, withSound);
+    if (withSound) playRefreshChord();
     if (firstRender) {
       firstRender = false;
       drawLogo();
@@ -978,4 +983,4 @@ startParticles();
 attachTilt(".stat-card", 7);
 attachTilt(".viz-card", 4);
 refresh();
-setInterval(refresh, 60_000);
+setInterval(() => refresh({ withSound: true }), 60_000);
