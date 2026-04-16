@@ -18,15 +18,6 @@ pub struct TokenRecord {
 
 impl TokenRecord {
     pub fn total_tokens(&self) -> u64 {
-        self.input_tokens
-            + self.output_tokens
-            + self.cache_creation_tokens
-            + self.cache_read_tokens
-    }
-
-    pub fn billable_tokens(&self) -> u64 {
-        // Cache reads are much cheaper compute-wise; weight lower.
-        self.input_tokens + self.output_tokens + self.cache_creation_tokens
-            + self.cache_read_tokens / 10
+        self.input_tokens + self.output_tokens + self.cache_creation_tokens + self.cache_read_tokens
     }
 }

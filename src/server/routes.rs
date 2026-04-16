@@ -33,7 +33,9 @@ async fn providers(State(s): State<Arc<AppState>>) -> Json<Vec<impact::ProviderB
     Json(impact::provider_breakdown(&s.records))
 }
 
-async fn equivalents(State(s): State<Arc<AppState>>) -> Json<crate::models::equivalents::Equivalents> {
+async fn equivalents(
+    State(s): State<Arc<AppState>>,
+) -> Json<crate::models::equivalents::Equivalents> {
     Json(impact::equivalents(&s.records))
 }
 

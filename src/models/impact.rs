@@ -99,8 +99,16 @@ pub fn summarize(records: &[TokenRecord]) -> Summary {
         total.add(&t);
         providers.insert(r.provider.clone());
         models.insert(r.model.clone());
-        min_ts = Some(min_ts.map_or(r.timestamp, |m: chrono::DateTime<chrono::Utc>| m.min(r.timestamp)));
-        max_ts = Some(max_ts.map_or(r.timestamp, |m: chrono::DateTime<chrono::Utc>| m.max(r.timestamp)));
+        min_ts = Some(
+            min_ts.map_or(r.timestamp, |m: chrono::DateTime<chrono::Utc>| {
+                m.min(r.timestamp)
+            }),
+        );
+        max_ts = Some(
+            max_ts.map_or(r.timestamp, |m: chrono::DateTime<chrono::Utc>| {
+                m.max(r.timestamp)
+            }),
+        );
     }
     Summary {
         total_tokens: total.tokens,
@@ -120,10 +128,7 @@ pub fn daily(records: &[TokenRecord]) -> Vec<DailyPoint> {
     for r in records {
         let d = r.timestamp.date_naive();
         let t = record_totals(r);
-        buckets
-            .entry(d)
-            .and_modify(|e| e.add(&t))
-            .or_insert(t);
+        buckets.entry(d).and_modify(|e| e.add(&t)).or_insert(t);
     }
     buckets
         .into_iter()
@@ -174,13 +179,20 @@ pub fn model_breakdown(records: &[TokenRecord]) -> Vec<ModelBreakdown> {
         })
         .collect();
     // Normalize score to 0..100 based on max observed.
-    let max_score = out.iter().map(|m| m.eco_efficiency_score).fold(0.0_f64, f64::max);
+    let max_score = out
+        .iter()
+        .map(|m| m.eco_efficiency_score)
+        .fold(0.0_f64, f64::max);
     if max_score > 0.0 {
         for m in &mut out {
             m.eco_efficiency_score = (m.eco_efficiency_score / max_score) * 100.0;
         }
     }
-    out.sort_by(|a, b| b.energy_wh.partial_cmp(&a.energy_wh).unwrap_or(std::cmp::Ordering::Equal));
+    out.sort_by(|a, b| {
+        b.energy_wh
+            .partial_cmp(&a.energy_wh)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     out
 }
 

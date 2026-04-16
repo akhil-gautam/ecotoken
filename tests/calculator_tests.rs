@@ -1,6 +1,6 @@
+use chrono::Utc;
 use ecotoken::calculator::{carbon, energy, water};
 use ecotoken::models::token_record::TokenRecord;
-use chrono::Utc;
 
 fn rec(model: &str, provider: &str, input: u64, output: u64) -> TokenRecord {
     TokenRecord {

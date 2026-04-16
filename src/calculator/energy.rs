@@ -6,16 +6,13 @@ const SHORT_TOKENS: f64 = 400.0;
 const MEDIUM_TOKENS: f64 = 2000.0;
 const LONG_TOKENS: f64 = 11_500.0;
 
-pub fn query_count(total_tokens: u64) -> f64 {
-    if total_tokens == 0 {
-        return 0.0;
-    }
-    (total_tokens as f64 / SHORT_TOKENS).max(1.0)
-}
-
 pub fn record_queries(r: &TokenRecord) -> f64 {
     // Each record is one assistant turn → count as 1 query of the appropriate size.
-    if r.total_tokens() == 0 { 0.0 } else { 1.0 }
+    if r.total_tokens() == 0 {
+        0.0
+    } else {
+        1.0
+    }
 }
 
 fn interp(size_tokens: f64, m: &ModelEnergy) -> f64 {

@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -59,9 +59,12 @@ pub fn scan() -> Result<Vec<TokenRecord>> {
         return Ok(Vec::new());
     }
     let mut out = Vec::new();
-    for entry in walkdir::WalkDir::new(&root).into_iter().filter_map(|e| e.ok()) {
+    for entry in walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         let p = entry.path();
-        if p.is_file() && p.extension().map_or(false, |e| e == "jsonl") {
+        if p.is_file() && p.extension().is_some_and(|e| e == "jsonl") {
             if let Ok(mut recs) = parse_file(p) {
                 out.append(&mut recs);
             }
@@ -102,8 +105,12 @@ fn parse_file(path: &Path) -> Result<Vec<TokenRecord>> {
                 }
             }
             Some("event_msg") => {
-                let Some(payload) = parsed.payload else { continue };
-                let Some(t) = payload.get("type").and_then(|v| v.as_str()) else { continue };
+                let Some(payload) = parsed.payload else {
+                    continue;
+                };
+                let Some(t) = payload.get("type").and_then(|v| v.as_str()) else {
+                    continue;
+                };
                 if t != "token_count" {
                     continue;
                 }
@@ -112,7 +119,9 @@ fn parse_file(path: &Path) -> Result<Vec<TokenRecord>> {
                     Err(_) => continue,
                 };
                 let Some(info) = tc.info else { continue };
-                let Some(last) = info.last_token_usage else { continue };
+                let Some(last) = info.last_token_usage else {
+                    continue;
+                };
                 if last.input_tokens == 0 && last.output_tokens == 0 {
                     continue;
                 }

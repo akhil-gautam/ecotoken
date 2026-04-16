@@ -37,9 +37,9 @@ pub fn scan() -> Result<Vec<TokenRecord>> {
             continue;
         }
         tracing::debug!("Copilot usage: {}", path.display());
-        if path.extension().map_or(false, |e| e == "jsonl") {
+        if path.extension().is_some_and(|e| e == "jsonl") {
             let reader = BufReader::new(File::open(&path)?);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if let Ok(e) = serde_json::from_str::<UsageEntry>(&line) {
                     if let Some(r) = entry_to_record(e) {
                         out.push(r);
