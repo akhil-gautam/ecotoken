@@ -15,7 +15,41 @@ pub struct ModelEnergy {
 }
 
 const TABLE: &[ModelEnergy] = &[
-    // Anthropic
+    // Anthropic — Claude 4.x generation (Feb–Apr 2026)
+    // No per-model published figures yet; anchors extrapolated from the
+    // Jegham et al. (2025) Sonnet/Opus curves with a small efficiency
+    // gain per generation. Longest-prefix match wins, so these override
+    // the generic claude-opus / claude-sonnet fallbacks below for model
+    // strings like "claude-opus-4-7-20260416" that Claude Code emits.
+    ModelEnergy {
+        canonical: "claude-opus-4-7",
+        provider: "anthropic",
+        short_wh: 1.15,
+        medium_wh: 5.60,
+        long_wh: 27.0,
+    },
+    ModelEnergy {
+        canonical: "claude-opus-4-6",
+        provider: "anthropic",
+        short_wh: 1.18,
+        medium_wh: 5.70,
+        long_wh: 27.5,
+    },
+    ModelEnergy {
+        canonical: "claude-sonnet-4-6",
+        provider: "anthropic",
+        short_wh: 0.32,
+        medium_wh: 1.70,
+        long_wh: 11.0,
+    },
+    ModelEnergy {
+        canonical: "claude-mythos",
+        provider: "anthropic",
+        short_wh: 0.95,
+        medium_wh: 5.20,
+        long_wh: 28.5,
+    },
+    // Anthropic — generic class fallbacks
     ModelEnergy {
         canonical: "claude-opus",
         provider: "anthropic",
