@@ -25,11 +25,16 @@ jobs:
             os: ubuntu-latest
             archive: tar.gz
             cross: true
+          # Both Apple targets build on the Apple Silicon runner.
+          # GitHub's free macos-13 (Intel) queue is chronically
+          # back-logged; macos-latest ships the Xcode SDK for every
+          # Apple arch so we cross-compile x86_64 from arm64 instead of
+          # waiting hours for an Intel runner.
           - target: x86_64-apple-darwin
-            os: macos-13
+            os: macos-latest
             archive: tar.gz
           - target: aarch64-apple-darwin
-            os: macos-14
+            os: macos-latest
             archive: tar.gz
           - target: x86_64-pc-windows-msvc
             os: windows-latest
