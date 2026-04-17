@@ -3,6 +3,10 @@ name = "ecotoken"
 version = "0.1.1"
 edition = "2021"
 description = "Measure the environmental impact of your AI coding assistants."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/akhil-gautam/ecotoken"
+homepage = "https://github.com/akhil-gautam/ecotoken"
 
 [dependencies]
 axum = "0.8"

@@ -1,0 +1,128 @@
+name: Homebrew formula
+
+# Updates the akhil-gautam/homebrew-tap formula whenever a new GitHub release
+# is published. Also runnable manually with a tag input so an older release
+# can be re-pushed to the tap after fixing something on the tap side.
+#
+# Requirements:
+#   - A public repo at akhil-gautam/homebrew-tap with at least an empty
+#     Formula/ directory.
+#   - A repo secret named TAP_TOKEN holding a fine-grained PAT with
+#     "Contents: Read and write" permission on the tap repo.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish formula for ${{ github.event.release.tag_name || inputs.tag }}
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      TAP_REPO: akhil-gautam/homebrew-tap
+    steps:
+      - name: Resolve version (strip leading v)
+        id: v
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download release archives
+        run: |
+          mkdir -p archives
+          cd archives
+          for target in \
+            aarch64-apple-darwin \
+            x86_64-apple-darwin \
+            aarch64-unknown-linux-gnu \
+            x86_64-unknown-linux-gnu
+          do
+            curl --fail --silent --show-error --location \
+              -o "ecotoken-${target}.tar.gz" \
+              "https://github.com/${{ github.repository }}/releases/download/${TAG}/ecotoken-${target}.tar.gz"
+          done
+
+      - name: Compute SHA256s
+        id: sha
+        run: |
+          cd archives
+          {
+            echo "darwin_arm=$(sha256sum ecotoken-aarch64-apple-darwin.tar.gz       | cut -d' ' -f1)"
+            echo "darwin_x86=$(sha256sum ecotoken-x86_64-apple-darwin.tar.gz        | cut -d' ' -f1)"
+            echo "linux_arm=$(sha256sum  ecotoken-aarch64-unknown-linux-gnu.tar.gz  | cut -d' ' -f1)"
+            echo "linux_x86=$(sha256sum  ecotoken-x86_64-unknown-linux-gnu.tar.gz   | cut -d' ' -f1)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TAP_REPO }}
+          token: ${{ secrets.TAP_TOKEN }}
+          path: tap
+
+      - name: Render formula
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          DARWIN_ARM: ${{ steps.sha.outputs.darwin_arm }}
+          DARWIN_X86: ${{ steps.sha.outputs.darwin_x86 }}
+          LINUX_ARM: ${{ steps.sha.outputs.linux_arm }}
+          LINUX_X86: ${{ steps.sha.outputs.linux_x86 }}
+        run: |
+          mkdir -p tap/Formula
+          cat > tap/Formula/ecotoken.rb <<EOF
+          class Ecotoken < Formula
+            desc "Environmental impact dashboard for AI coding assistants"
+            homepage "https://github.com/akhil-gautam/ecotoken"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/akhil-gautam/ecotoken/releases/download/v${VERSION}/ecotoken-aarch64-apple-darwin.tar.gz"
+                sha256 "${DARWIN_ARM}"
+              else
+                url "https://github.com/akhil-gautam/ecotoken/releases/download/v${VERSION}/ecotoken-x86_64-apple-darwin.tar.gz"
+                sha256 "${DARWIN_X86}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/akhil-gautam/ecotoken/releases/download/v${VERSION}/ecotoken-aarch64-unknown-linux-gnu.tar.gz"
+                sha256 "${LINUX_ARM}"
+              else
+                url "https://github.com/akhil-gautam/ecotoken/releases/download/v${VERSION}/ecotoken-x86_64-unknown-linux-gnu.tar.gz"
+                sha256 "${LINUX_X86}"
+              end
+            end
+
+            def install
+              bin.install "ecotoken"
+            end
+
+            test do
+              assert_match "ecotoken", shell_output("#{bin}/ecotoken --version")
+            end
+          end
+          EOF
+
+      - name: Commit and push to tap
+        working-directory: tap
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/ecotoken.rb
+          if git diff --cached --quiet; then
+            echo "Formula unchanged for ${TAG}; nothing to commit."
+          else
+            git commit -m "ecotoken ${{ steps.v.outputs.version }}"
+            git push
+          fi

@@ -59,6 +59,19 @@ now — `ecotoken` just reads it and does the math.
 
 ## Install
 
+### Homebrew (macOS + Linux)
+
+```bash
+brew tap akhil-gautam/tap
+brew install ecotoken
+```
+
+Upgrade with `brew upgrade ecotoken`. The formula lives in
+[akhil-gautam/homebrew-tap](https://github.com/akhil-gautam/homebrew-tap)
+and is regenerated automatically by `.github/workflows/homebrew.yml`
+every time a `v*` tag is released, so `brew` always points at the
+latest version's prebuilt binaries for your platform.
+
 ### Prebuilt binaries
 
 Release binaries are attached to every tagged release. Downloads:
@@ -272,6 +285,29 @@ To cut a release:
 git tag v0.1.1
 git push --tags
 ```
+
+### Homebrew tap bootstrap (one-time)
+
+The `homebrew.yml` workflow updates the formula at
+[akhil-gautam/homebrew-tap](https://github.com/akhil-gautam/homebrew-tap)
+on every published release. First-time setup:
+
+1. Create the tap repo on GitHub (it can be empty):
+   `gh repo create akhil-gautam/homebrew-tap --public --description "Homebrew formulas for akhil-gautam projects"`.
+   Homebrew requires the name to start with `homebrew-` and the CLI
+   maps `brew tap akhil-gautam/tap` to `akhil-gautam/homebrew-tap`.
+2. Generate a fine-grained PAT with **Contents: Read and write** on
+   the tap repo and nothing else. Add it as a secret named
+   `TAP_TOKEN` on the `ecotoken` repo.
+3. Trigger the workflow for the latest tag so the first formula lands:
+   `gh workflow run "Homebrew formula" -f tag=v0.1.1`.
+
+From that point onwards, every new `v*` release automatically pushes
+an updated `Formula/ecotoken.rb` to the tap.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
 
 ## Methodology & disclaimer
 
