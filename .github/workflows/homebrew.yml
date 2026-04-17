@@ -11,12 +11,18 @@ name: Homebrew formula
 #     "Contents: Read and write" permission on the tap repo.
 
 on:
-  release:
-    types: [published]
+  # GitHub suppresses the `release.published` event when the release is
+  # created by GITHUB_TOKEN (softprops/action-gh-release inside the
+  # Release workflow) to prevent workflow recursion, so we trigger off
+  # the Release workflow's own completion instead. head_branch on a
+  # tag-push-triggered workflow is the tag ref ("v0.1.2").
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (e.g. v0.1.1)"
+        description: "Release tag (e.g. v0.1.2)"
         required: true
         type: string
 
@@ -25,10 +31,18 @@ permissions:
 
 jobs:
   publish:
-    name: Publish formula for ${{ github.event.release.tag_name || inputs.tag }}
+    name: Publish formula for ${{ inputs.tag || github.event.workflow_run.head_branch }}
     runs-on: ubuntu-latest
+    # For workflow_run triggers, only publish when the upstream Release
+    # workflow succeeded AND its trigger was a v* tag push (head_branch
+    # on a tag-triggered run is the tag name). workflow_dispatch always
+    # runs.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
     env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
       TAP_REPO: akhil-gautam/homebrew-tap
     steps:
       - name: Resolve version (strip leading v)
