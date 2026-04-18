@@ -18,6 +18,16 @@ on top of the data every developer already has locally. If you use Claude
 Code or Codex, the raw telemetry is sitting in your home directory right
 now — `ecotoken` just reads it and does the math.
 
+![ecotoken hero dashboard — Tokens / Energy / Water / CO₂ stat cards](./docs/screenshots/hero.png)
+
+> **Platform support:** ecotoken is only officially supported on **macOS**
+> (Apple Silicon and Intel) for now. The Release pipeline builds
+> `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, and
+> `x86_64-pc-windows-msvc` archives as well, but those targets are
+> untested end-to-end — parser paths and the browser auto-open step
+> are tuned for macOS. Linux users are welcome to try the tarballs;
+> Windows users should treat the binary as experimental.
+
 ---
 
 ## Contents
@@ -59,32 +69,50 @@ now — `ecotoken` just reads it and does the math.
 
 ## Install
 
-### Homebrew (macOS + Linux)
+### Homebrew — recommended (macOS)
+
+The easiest way to install and stay up to date. Works on both Apple
+Silicon and Intel Macs.
 
 ```bash
 brew tap akhil-gautam/tap
 brew install ecotoken
 ```
 
-Upgrade with `brew upgrade ecotoken`. The formula lives in
+Upgrade later with:
+
+```bash
+brew upgrade ecotoken
+```
+
+The formula lives in
 [akhil-gautam/homebrew-tap](https://github.com/akhil-gautam/homebrew-tap)
 and is regenerated automatically by `.github/workflows/homebrew.yml`
-every time a `v*` tag is released, so `brew` always points at the
-latest version's prebuilt binaries for your platform.
+whenever a new `v*` tag is released on this repo, so `brew upgrade`
+always pulls the latest prebuilt binary for your CPU architecture.
+First run:
 
-### Prebuilt binaries
+```bash
+ecotoken
+```
 
-Release binaries are attached to every tagged release. Downloads:
+…scans your Claude Code and Codex session logs and opens
+`http://localhost:51824` in the default browser.
 
-- macOS Apple Silicon (`aarch64-apple-darwin`)
-- macOS Intel (`x86_64-apple-darwin`)
-- Linux x86_64 glibc (`x86_64-unknown-linux-gnu`)
-- Linux ARM64 glibc (`aarch64-unknown-linux-gnu`)
-- Windows x86_64 (`x86_64-pc-windows-msvc`)
+### Prebuilt binaries (other platforms, experimental)
 
-Grab the archive matching your platform from the
-[Releases page](https://github.com/akhil-gautam/ecotoken/releases),
-extract, and run the binary.
+Every tagged release also attaches raw archives to the
+[Releases page](https://github.com/akhil-gautam/ecotoken/releases):
+
+- `ecotoken-aarch64-apple-darwin.tar.gz` — macOS Apple Silicon
+- `ecotoken-x86_64-apple-darwin.tar.gz`  — macOS Intel
+- `ecotoken-aarch64-unknown-linux-gnu.tar.gz` — Linux ARM64 glibc
+- `ecotoken-x86_64-unknown-linux-gnu.tar.gz`  — Linux x86_64 glibc
+- `ecotoken-x86_64-pc-windows-msvc.zip`       — Windows x86_64
+
+The Linux and Windows builds exist for adventurous users but aren't
+part of the supported surface yet (see the platform-support note at
+the top).
 
 ### From source
 
@@ -176,6 +204,8 @@ The dashboard auto-refreshes all of these every 60 seconds.
 
 ## Dashboard
 
+![Your impact, visualized — water, road trip, phone charges, offset forest](./docs/screenshots/impact.png)
+
 The embedded UI is deliberately more playful than a typical corporate
 dashboard. Headline features:
 
@@ -192,6 +222,8 @@ dashboard. Headline features:
 - **XP / rank HUD** — total tokens map to a rank tier; a shining XP bar tracks progress to the next one.
 - **Achievement toasts** — 11 milestones (1M / 10M / 100M / 1B tokens, first shower of water, 10km / 100km road trip, first tree-day, 100 tree-days…). Persisted in `localStorage` so they don't re-fire between sessions.
 - **Eco-efficiency leaderboard** — models ranked by tokens-per-joule, normalized to a 0-100 score. Medal badges for the top three, animated score bars.
+
+  ![Eco-efficiency leaderboard — models ranked by intelligence per watt](./docs/screenshots/leaderboard.png)
 - **Theme switcher** — full design-token system flips between dark
   ("eco-digital brutalism" with neon accents) and light (warm off-white,
   muted accents, softened drop-shadows) on click. Persisted in
