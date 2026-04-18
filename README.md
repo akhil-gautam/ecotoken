@@ -41,7 +41,6 @@ now — `ecotoken` just reads it and does the math.
 - [Dashboard](#dashboard)
 - [How the numbers are calculated](#how-the-numbers-are-calculated)
 - [Development](#development)
-- [Releases](#releases)
 - [Methodology & disclaimer](#methodology--disclaimer)
 
 ---
@@ -298,44 +297,6 @@ cargo clippy --all-targets -- -D warnings
 Static assets in `static/` (index.html, style.css, app.js) are embedded
 into the binary at compile time by `rust-embed`, so any change to them
 requires a rebuild before the dashboard picks it up.
-
-## Releases
-
-Pushing a tag matching `v*` triggers `.github/workflows/release.yml`, which
-cross-builds on five runners in parallel and uploads archives to a
-GitHub Release with auto-generated release notes:
-
-- `x86_64-unknown-linux-gnu`  (tar.gz, ubuntu-latest)
-- `aarch64-unknown-linux-gnu` (tar.gz, cross-compiled on ubuntu-latest)
-- `x86_64-apple-darwin`       (tar.gz, macos-13)
-- `aarch64-apple-darwin`      (tar.gz, macos-14 — Apple Silicon)
-- `x86_64-pc-windows-msvc`    (zip,    windows-latest)
-
-To cut a release:
-
-```bash
-git tag v0.1.1
-git push --tags
-```
-
-### Homebrew tap bootstrap (one-time)
-
-The `homebrew.yml` workflow updates the formula at
-[akhil-gautam/homebrew-tap](https://github.com/akhil-gautam/homebrew-tap)
-on every published release. First-time setup:
-
-1. Create the tap repo on GitHub (it can be empty):
-   `gh repo create akhil-gautam/homebrew-tap --public --description "Homebrew formulas for akhil-gautam projects"`.
-   Homebrew requires the name to start with `homebrew-` and the CLI
-   maps `brew tap akhil-gautam/tap` to `akhil-gautam/homebrew-tap`.
-2. Generate a fine-grained PAT with **Contents: Read and write** on
-   the tap repo and nothing else. Add it as a secret named
-   `TAP_TOKEN` on the `ecotoken` repo.
-3. Trigger the workflow for the latest tag so the first formula lands:
-   `gh workflow run "Homebrew formula" -f tag=v0.1.1`.
-
-From that point onwards, every new `v*` release automatically pushes
-an updated `Formula/ecotoken.rb` to the tap.
 
 ## License
 
